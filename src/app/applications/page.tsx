@@ -1,17 +1,13 @@
 "use client";
 
 import { useMemo, useState } from "react";
-
-type Application = {
-  id: string;
-  company: string;
-  roleTitle: string;
-  status: "Draft" | "Applied" | "Interviewing" | "Offer" | "Rejected";
-  appliedAt: string;
-  source: string;
-  location: string;
-  notesPreview: string;
-};
+import { useRouter } from "next/navigation";
+import FiltersBar from "./FiltersBar";
+import ApplicationTable, {
+  type Application,
+  type SortKey,
+  type SortOrder
+} from "./applicationTable";
 
 const APPLICATIONS: Application[] = [
   {
@@ -49,8 +45,10 @@ const APPLICATIONS: Application[] = [
 export default function ApplicationsPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("All");
-  const [sortKey, setSortKey] = useState<"company" | "appliedAt">("appliedAt");
-  const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
+  const [sortKey, setSortKey] = useState<SortKey>("appliedAt");
+  const [sortOrder, setSortOrder] = useState<SortOrder>("desc");
+
+  const router = useRouter();
 
   const filteredAndSorted = useMemo(() => {
     const query = searchQuery.trim().toLowerCase();
@@ -84,12 +82,33 @@ export default function ApplicationsPage() {
         </p>
         <h1 className="text-3xl font-semibold">All Applications</h1>
         <p className="text-sm text-muted-foreground">
-          This page will list your job applications. We will add filters and a table next.
+          Filter, search, and sort your applications. Click a row to open details.
         </p>
       </header>
-      <div className="rounded-2xl border bg-card p-6">
-        <p className="text-sm text-muted-foreground">No data yet.</p>
-      </div>
+
+      <FiltersBar
+        searchQuery={searchQuery}
+        onSearchChange={setSearchQuery}
+        statusFilter={statusFilter}
+        onStatusChange={setStatusFilter}
+      />
+
+      <ApplicationTable
+        applications={filteredAndSorted}
+        sortKey={sortKey}
+        sortOrder={sortOrder}
+        onSortChange={(nextKey) => {
+          if (nextKey === sortKey) {
+            setSortOrder((prev) => (prev === "asc" ? "desc" : "asc"));
+          } else {
+            setSortKey(nextKey);
+            setSortOrder(nextKey === "appliedAt" ? "desc" : "asc");
+          }
+        }}
+        onRowClick={(id) => {
+          router.push(`/applications/${id}`);
+        }}
+      />
     </section>
   );
 }
