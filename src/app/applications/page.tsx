@@ -56,7 +56,8 @@ export default function ApplicationsPage() {
     const query = searchQuery.trim().toLowerCase();
 
     const filtered = APPLICATIONS.filter((app) => {
-      const matchesQuery = app.company.toLowerCase().includes(query) || app.roleTitle.toLowerCase().includes(query);
+      const matchesQuery =
+        app.company.toLowerCase().includes(query) || app.roleTitle.toLowerCase().includes(query);
       const matchesStatus = statusFilter === "All" || app.status === statusFilter;
       return matchesQuery && matchesStatus;
     });
