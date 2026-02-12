@@ -17,36 +17,30 @@ export const applicationSchema = z.object({
 
 export type ApplicationFormValues = z.infer<typeof applicationSchema>;
 
-type ApplicationEditFormProps = {
-  initialValues: Application;
-  onSave: (values: ApplicationFormValues) => void;
-  onCancel: () => void;
+type ApplicationFormProps = {
+  defaultValues: ApplicationFormValues;
+  onSubmit: (value: ApplicationFormValues) => void;
+  onCancel?: () => void;
+  submitLabel?: string;
 };
 
-export default function ApplicationEditForm({
-  initialValues,
-  onSave,
-  onCancel
-}: ApplicationEditFormProps) {
+export default function ApplicationForm({
+  defaultValues,
+  onSubmit,
+  onCancel,
+  submitLabel = "Save"
+}: ApplicationFormProps) {
   const {
     register,
     handleSubmit,
-    formState: { errors }
+    formState: { errors, isSubmitting }
   } = useForm<ApplicationFormValues>({
     resolver: zodResolver(applicationSchema),
-    defaultValues: {
-      company: initialValues.company,
-      roleTitle: initialValues.roleTitle,
-      status: initialValues.status,
-      appliedAt: initialValues.appliedAt.slice(0, 10), //input type="date" expects YYYY-MM-DD format
-      source: initialValues.source ?? "",
-      location: initialValues.location ?? "",
-      notes: initialValues.notes ?? ""
-    }
+    defaultValues
   });
 
   return (
-    <form onSubmit={handleSubmit(onSave)} className="space-y-6">
+    <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
       {/* Company */}
       <div className="space-y-1">
         <label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
@@ -140,17 +134,21 @@ export default function ApplicationEditForm({
       <div className="flex gap-3">
         <button
           type="submit"
-          className="rounded-lg bg-foreground px-4 py-2 text-sm text-background transition hover:bg-foreground/90"
+          disabled={isSubmitting}
+          className="rounded-lg bg-foreground px-4 py-2 text-sm text-background transition hover:bg-foreground/90 disabled:opacity-50"
         >
-          Save
+          {isSubmitting ? "Saving..." : submitLabel}
         </button>
-        <button
-          type="button"
-          className="rounded-lg border px-4 py-2 text-sm text-foreground transition hover:bg-accent"
-          onClick={onCancel}
-        >
-          Cancel
-        </button>
+
+        {onCancel ? (
+          <button
+            type="button"
+            onClick={onCancel}
+            className="rounded-lg border px-4 py-2 text-sm text-foreground transition hover:bg-accent"
+          >
+            Cancel
+          </button>
+        ) : null}
       </div>
     </form>
   );

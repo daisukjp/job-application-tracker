@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useApplicationsStore } from "@/lib/store/applications";
-import ApplicationEditForm, {
+import ApplicationForm, {
   type ApplicationFormValues
 } from "@/app/applications/ApplicationEditForm";
 
@@ -63,7 +63,7 @@ export default function ApplicationDetailPage({ params }: ApplicationDetailPageP
     });
 
     setIsEditing(false);
-    setToast({ visible: false, message: "Application updated." });
+    setToast({ visible: true, message: "Application updated." });
     setTimeout(() => {
       setToast({ visible: false, message: "" });
     }, 2500);
@@ -141,10 +141,19 @@ export default function ApplicationDetailPage({ params }: ApplicationDetailPageP
       ) : (
         // Editing Mode
         <div className="rounded-2xl border bg-card p-6 shadow-soft">
-          <ApplicationEditForm
-            initialValues={application}
-            onSave={handleSave}
+          <ApplicationForm
+            defaultValues={{
+              company: application.company,
+              roleTitle: application.roleTitle,
+              status: application.status,
+              appliedAt: application.appliedAt.slice(0, 10), // date input  ds
+              source: application.source ?? "",
+              location: application.location ?? "",
+              notes: application.notes ?? ""
+            }}
+            onSubmit={handleSave}
             onCancel={() => setIsEditing(false)}
+            submitLabel="Save"
           />
         </div>
       )}

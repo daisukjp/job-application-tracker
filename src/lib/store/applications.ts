@@ -17,6 +17,7 @@ export type Application = {
 type ApplicationState = {
   applications: Application[];
   getById: (id: string) => Application | undefined;
+  createApplication: (application: Application) => void;
   updateApplication: (id: string, patch: Partial<Application>) => void;
 };
 
@@ -64,6 +65,12 @@ export const useApplicationsStore = create<ApplicationState>((set, get) => ({
   getById: (id) => {
     const { applications } = get();
     return applications.find((app) => app.id === id);
+  },
+
+  createApplication: (application) => {
+    set((state) => ({
+      applications: [application, ...state.applications]
+    }));
   },
 
   updateApplication: (id, patch) => {
