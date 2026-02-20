@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import FiltersBar from "./FiltersBar";
 import ApplicationTable, {
@@ -8,6 +8,18 @@ import ApplicationTable, {
   type SortKey,
   type SortOrder
 } from "./applicationTable";
+import { listApplications, type ApplicationRow } from "../../lib/data/applications";
+
+type ApplicationUI = {
+  id: string;
+  company: string;
+  roleTitle: string;
+  status: "Draft" | "Applied" | "Interviewing" | "Offer" | "Rejected";
+  appliedAt: string;
+  source: string;
+  location: string;
+  notesPreview: string;
+};
 
 const APPLICATIONS: Application[] = [
   {
@@ -43,17 +55,55 @@ const APPLICATIONS: Application[] = [
 ];
 
 export default function ApplicationsPage() {
+  const [rows, setRows] = useState<ApplicationRow[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("All");
   const [sortKey, setSortKey] = useState<SortKey>("appliedAt");
   const [sortOrder, setSortOrder] = useState<SortOrder>("desc");
+
+  useEffect(() => {
+    let mounted = true;
+
+    const load = async () => {
+      try {
+        const data = await listApplications();
+        if (mounted) setRows(data);
+      } catch (err) {
+        if (mounted) setError((err as Error).message);
+      } finally {
+        if (mounted) setLoading(false);
+      }
+    };
+
+    load();
+
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  const uiList = useMemo<ApplicationUI[]>(() => {
+    return rows.map((row) => ({
+      id: row.id,
+      company: row.company,
+      roleTitle: row.role_title,
+      status: row.status as ApplicationUI["status"],
+      appliedAt: row.applied_at,
+      source: row.source ?? "",
+      location: row.location ?? "",
+      notesPreview: row.notes ? row.notes.slice(0, 60) : ""
+    }));
+  }, [rows]);
 
   const router = useRouter();
 
   const filteredAndSorted = useMemo(() => {
     const query = searchQuery.trim().toLowerCase();
 
-    const filtered = APPLICATIONS.filter((app) => {
+    const filtered = uiList.filter((app) => {
       const matchesQuery =
         app.company.toLowerCase().includes(query) || app.roleTitle.toLowerCase().includes(query);
       const matchesStatus = statusFilter === "All" || app.status === statusFilter;

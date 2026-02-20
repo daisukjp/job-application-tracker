@@ -12,10 +12,7 @@ export default function DashboardPage() {
       </header>
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {Array.from({ length: 3 }).map((_, index) => (
-          <div
-            key={index}
-            className="rounded-2xl border bg-card p-4 shadow-soft"
-          >
+          <div key={index} className="rounded-2xl border bg-card p-4 shadow-soft">
             <p className="text-xs font-medium text-muted-foreground">Placeholder</p>
             <p className="mt-3 text-lg font-semibold">Card {index + 1}</p>
             <p className="mt-2 text-sm text-muted-foreground">
