@@ -39,7 +39,7 @@ export async function getApplication(id: string): Promise<ApplicationRow | null>
 export async function createApplication(
   payload: Omit<ApplicationRow, "id" | "created_at">
 ): Promise<ApplicationRow> {
-  const { data, error } = await supabase.from("applications").insert(payload).select().single();
+  const { data, error } = await supabase.from("applications").insert(payload).select("*").single();
 
   if (error) throw new Error(error.message);
 

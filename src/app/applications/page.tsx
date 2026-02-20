@@ -1,13 +1,15 @@
 "use client";
 
-import { useMemo, useState, useEffect } from "react";
+import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import FiltersBar from "./FiltersBar";
+import { useQuery } from "@tanstack/react-query";
+import FiltersBar from "../../components/applications/FiltersBar";
 import ApplicationTable, {
   type Application,
   type SortKey,
   type SortOrder
-} from "./applicationTable";
+} from "../../components/applications/ApplicationTable";
+import Skeleton from "@/components/ui/Skeleton";
 import { listApplications, type ApplicationRow } from "../../lib/data/applications";
 
 type ApplicationUI = {
@@ -22,38 +24,18 @@ type ApplicationUI = {
 };
 
 export default function ApplicationsPage() {
-  const [rows, setRows] = useState<ApplicationRow[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("All");
   const [sortKey, setSortKey] = useState<SortKey>("appliedAt");
   const [sortOrder, setSortOrder] = useState<SortOrder>("desc");
 
-  useEffect(() => {
-    let mounted = true;
-
-    const load = async () => {
-      try {
-        const data = await listApplications();
-        if (mounted) setRows(data);
-      } catch (err) {
-        if (mounted) setError((err as Error).message);
-      } finally {
-        if (mounted) setLoading(false);
-      }
-    };
-
-    load();
-
-    return () => {
-      mounted = false;
-    };
-  }, []);
+  const { data, isLoading, isError, error, refetch } = useQuery({
+    queryKey: ["applications"],
+    queryFn: listApplications
+  });
 
   const uiList = useMemo<ApplicationUI[]>(() => {
-    return rows.map((row) => ({
+    return (data ?? []).map((row: ApplicationRow) => ({
       id: row.id,
       company: row.company,
       roleTitle: row.role_title,
@@ -63,7 +45,7 @@ export default function ApplicationsPage() {
       location: row.location ?? "",
       notesPreview: row.notes ? row.notes.slice(0, 60) : ""
     }));
-  }, [rows]);
+  }, [data]);
 
   const router = useRouter();
 
@@ -91,6 +73,28 @@ export default function ApplicationsPage() {
 
     return sorted;
   }, [uiList, searchQuery, statusFilter, sortKey, sortOrder]);
+
+  if (isLoading) {
+    return (
+      <section className="space-y-4">
+        <Skeleton className="h-8 w-40" />
+        <Skeleton className="h-6 w-64" />
+        <Skeleton className="h-64 w-full" />
+      </section>
+    );
+  }
+
+  if (isError) {
+    return (
+      <section className="space-y-4">
+        <p className="text-sm text-red-600">{(error as Error).message}</p>
+        <button className="rounded-lg border px-4 py-2 text-sm" onClick={() => refetch()}>
+          Retry
+        </button>
+      </section>
+    );
+  }
+
   return (
     <section className="space-y-4">
       <header className="space-y-2">

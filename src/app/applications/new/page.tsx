@@ -2,9 +2,10 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import ApplicationForm, {
   type ApplicationFormValues
-} from "@/app/applications/ApplicationEditForm";
+} from "@/components/applications/ApplicationEditForm";
 import { createApplication } from "@/lib/data/applications";
 
 type ToastState = {
@@ -14,13 +15,28 @@ type ToastState = {
 
 export default function NewApplicationPage() {
   const router = useRouter();
+  const queryClient = useQueryClient();
   const [toast, setToast] = useState<ToastState>({
     visible: false,
     message: ""
   });
 
+  const createMutation = useMutation({
+    mutationFn: createApplication,
+    onSuccess: (created) => {
+      queryClient.invalidateQueries({ queryKey: ["applications"] });
+
+      setToast({ visible: true, message: "Application created." });
+
+      setTimeout(() => {
+        setToast({ visible: false, message: "" });
+        router.push(`/applications/${created.id}`);
+      }, 800);
+    }
+  });
+
   const handleSubmit = async (values: ApplicationFormValues) => {
-    const created = await createApplication({
+    createMutation.mutate({
       company: values.company,
       role_title: values.roleTitle,
       status: values.status,
@@ -29,13 +45,6 @@ export default function NewApplicationPage() {
       location: values.location ?? null,
       notes: values.notes ?? null
     });
-
-    setToast({ visible: true, message: "Application created." });
-
-    setTimeout(() => {
-      setToast({ visible: false, message: "" });
-      router.push(`/applications/${created.id}`);
-    }, 800);
   };
 
   return (

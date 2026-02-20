@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Work_Sans } from "next/font/google";
 import "./globals.css";
 import AppShell from "@/components/layout/AppShell";
+import QueryProvider from "@/components/providers/QueryClient";
 
 const workSans = Work_Sans({
   subsets: ["latin"],
@@ -14,13 +15,13 @@ export const metadata: Metadata = {
   description: "Track roles, interviews, and outcomes in one minimal workspace."
 };
 
-export default function RootLayout({
-  children
-}: Readonly<{ children: React.ReactNode }>) {
+export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="en" className={workSans.variable}>
       <body className="font-sans">
-        <AppShell>{children}</AppShell>
+        <QueryProvider>
+          <AppShell>{children}</AppShell>
+        </QueryProvider>
       </body>
     </html>
   );
