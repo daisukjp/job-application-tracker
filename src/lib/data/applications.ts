@@ -19,7 +19,7 @@ export async function listApplications(): Promise<ApplicationRow[]> {
   const { data, error } = await supabase
     .from("applications")
     .select("*")
-    .order("applied_at", { asceding: false });
+    .order("applied_at", { ascending: false });
 
   if (error) {
     throw new Error(error.message);

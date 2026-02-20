@@ -8,10 +8,10 @@ export type Application = {
   roleTitle: string;
   status: "Draft" | "Applied" | "Interviewing" | "Offer" | "Rejected";
   appliedAt: string;
-  source: string; // ISO string
-  location: string;
-  notesPreview: string;
-  notes?: string;
+  source: string | null;
+  location: string | null;
+  notesPreview: string | null;
+  notes?: string | null;
 };
 
 type ApplicationState = {

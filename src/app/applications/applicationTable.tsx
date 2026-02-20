@@ -8,9 +8,9 @@ export type Application = {
   roleTitle: string;
   status: "Draft" | "Applied" | "Interviewing" | "Offer" | "Rejected";
   appliedAt: string;
-  source: string;
-  location: string;
-  notesPreview: string;
+  source: string | null;
+  location: string | null;
+  notesPreview: string | null;
 };
 
 export type SortKey = "company" | "appliedAt";

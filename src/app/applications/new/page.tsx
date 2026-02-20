@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import ApplicationForm, {
   type ApplicationFormValues
 } from "@/app/applications/ApplicationEditForm";
-import { useApplicationsStore } from "@/lib/store/applications";
+import { createApplication } from "@/lib/data/applications";
 
 type ToastState = {
   visible: boolean;
@@ -14,35 +14,27 @@ type ToastState = {
 
 export default function NewApplicationPage() {
   const router = useRouter();
-  const createApplication = useApplicationsStore((state) => state.createApplication);
-
   const [toast, setToast] = useState<ToastState>({
     visible: false,
     message: ""
   });
 
   const handleSubmit = async (values: ApplicationFormValues) => {
-    const id = crypto.randomUUID();
-    const appliedAtIso = new Date(`${values.appliedAt}T00:00:00`).toISOString();
-    const notesPreview = values.notes ? values.notes.slice(0, 60) : "";
-
-    createApplication({
-      id,
+    const created = await createApplication({
       company: values.company,
-      roleTitle: values.roleTitle,
+      role_title: values.roleTitle,
       status: values.status,
-      appliedAt: appliedAtIso,
-      source: values.source ?? "",
-      location: values.location ?? "",
-      notesPreview,
-      notes: values.notes ?? ""
+      applied_at: values.appliedAt,
+      source: values.source ?? null,
+      location: values.location ?? null,
+      notes: values.notes ?? null
     });
 
     setToast({ visible: true, message: "Application created." });
 
     setTimeout(() => {
       setToast({ visible: false, message: "" });
-      router.push(`/applications/${id}`);
+      router.push(`/applications/${created.id}`);
     }, 800);
   };
 

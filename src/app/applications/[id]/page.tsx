@@ -1,11 +1,12 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useApplicationsStore } from "@/lib/store/applications";
 import ApplicationForm, {
   type ApplicationFormValues
 } from "@/app/applications/ApplicationEditForm";
+import { getApplication, updateApplication, type ApplicationRow } from "@/lib/data/applications";
 
 type ApplicationDetailPageProps = {
   params: { id: string };
@@ -18,27 +19,36 @@ type ToastState = {
 
 export default function ApplicationDetailPage({ params }: ApplicationDetailPageProps) {
   const router = useRouter();
-
+  const [application, setApplication] = useState<ApplicationRow | null>(null);
+  const [loading, setLoading] = useState(true);
   const [isEditing, setIsEditing] = useState(false);
   const [toast, setToast] = useState<ToastState>({
     visible: false,
     message: ""
   });
 
-  const getById = useApplicationsStore((state) => state.getById);
-  const updateApplication = useApplicationsStore((state) => state.updateApplication);
+  useEffect(() => {
+    let mounted = true;
 
-  const application = useMemo(() => {
-    return getById(params.id);
-  }, [getById, params.id]);
+    const load = async () => {
+      const data = await getApplication(params.id);
+      if (mounted) {
+        setApplication(data);
+        setLoading(false);
+      }
+    };
+    load();
+    return () => {
+      mounted = false;
+    };
+  }, [params.id]);
+
+  if (loading) return <p className="text-sm text-muted-foreground">Loading...</p>;
 
   if (!application) {
     return (
       <section className="space-y-4">
         <h1 className="text-2xl font-semibold">Application Not Found</h1>
-        <p className="text-sm text-muted-foreground">
-          The requested application could not be found.
-        </p>
         <button
           className="rounded-lg border px-4 py-2 text-sm"
           onClick={() => router.push("/applications")}
@@ -49,19 +59,18 @@ export default function ApplicationDetailPage({ params }: ApplicationDetailPageP
     );
   }
 
-  const handleSave = (values: ApplicationFormValues) => {
-    const appliedAtIso = new Date(`${values.appliedAt}T00:00:00`).toISOString();
-
-    updateApplication(application.id, {
+  const handleSave = async (values: ApplicationFormValues) => {
+    const updated = await updateApplication(application.id, {
       company: values.company,
-      roleTitle: values.roleTitle,
+      role_title: values.roleTitle,
       status: values.status,
-      appliedAt: appliedAtIso,
+      applied_at: values.appliedAt,
       source: values.source ?? "",
       location: values.location ?? "",
       notes: values.notes ?? ""
     });
 
+    setApplication(updated);
     setIsEditing(false);
     setToast({ visible: true, message: "Application updated." });
     setTimeout(() => {
@@ -76,7 +85,7 @@ export default function ApplicationDetailPage({ params }: ApplicationDetailPageP
           Application Detail
         </p>
         <h1 className="text-3xl font-semibold">
-          {application.company} - {application.roleTitle}
+          {application.company} - {application.role_title}
         </h1>
         <p className="text-sm text-muted-foreground">View or edit this application.</p>
       </header>
@@ -104,7 +113,7 @@ export default function ApplicationDetailPage({ params }: ApplicationDetailPageP
               <dt className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                 Role
               </dt>
-              <dd className="text-sm">{application.roleTitle}</dd>
+              <dd className="text-sm">{application.role_title}</dd>
             </div>
             <div>
               <dt className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
@@ -116,7 +125,7 @@ export default function ApplicationDetailPage({ params }: ApplicationDetailPageP
               <dt className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                 Applied At
               </dt>
-              <dd className="text-sm">{new Date(application.appliedAt).toLocaleDateString()}</dd>
+              <dd className="text-sm">{new Date(application.applied_at).toLocaleDateString()}</dd>
             </div>
             <div>
               <dt className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
@@ -144,9 +153,9 @@ export default function ApplicationDetailPage({ params }: ApplicationDetailPageP
           <ApplicationForm
             defaultValues={{
               company: application.company,
-              roleTitle: application.roleTitle,
-              status: application.status,
-              appliedAt: application.appliedAt.slice(0, 10), // date input  ds
+              roleTitle: application.role_title,
+              status: application.status as ApplicationFormValues["status"],
+              appliedAt: application.applied_at,
               source: application.source ?? "",
               location: application.location ?? "",
               notes: application.notes ?? ""
