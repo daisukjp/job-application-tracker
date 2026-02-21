@@ -2,15 +2,18 @@
 
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import FiltersBar from "../../components/applications/FiltersBar";
 import ApplicationTable, {
-  type Application,
   type SortKey,
   type SortOrder
 } from "../../components/applications/ApplicationTable";
 import Skeleton from "@/components/ui/Skeleton";
-import { listApplications, type ApplicationRow } from "../../lib/data/applications";
+import {
+  listApplications,
+  updateApplication,
+  type ApplicationRow
+} from "../../lib/data/applications";
 
 type ApplicationUI = {
   id: string;
@@ -23,7 +26,14 @@ type ApplicationUI = {
   notesPreview: string | null;
 };
 
+type ToastState = { visible: boolean; message: string };
+
 export default function ApplicationsPage() {
+  const router = useRouter();
+  const queryClient = useQueryClient();
+
+  const [toast, setToast] = useState<ToastState>({ visible: false, message: "" });
+
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("All");
   const [sortKey, setSortKey] = useState<SortKey>("appliedAt");
@@ -32,6 +42,34 @@ export default function ApplicationsPage() {
   const { data, isLoading, isError, error, refetch } = useQuery({
     queryKey: ["applications"],
     queryFn: listApplications
+  });
+
+  const updateStatusMutation = useMutation({
+    mutationFn: ({ id, status }: { id: string; status: ApplicationUI["status"] }) =>
+      updateApplication(id, { status }),
+    onMutate: async ({ id, status }) => {
+      await queryClient.cancelQueries({ queryKey: ["applications"] });
+      const previous = queryClient.getQueryData<ApplicationRow[]>(["applications"]);
+      queryClient.setQueryData<ApplicationRow[]>(["applications"], (old) => {
+        if (!old) return old;
+        return old.map((row) => (row.id === id ? { ...row, status } : row));
+      });
+      return { previous };
+    },
+    onError: (_err, _vars, context) => {
+      if (context?.previous) {
+        queryClient.setQueryData(["applications"], context.previous);
+      }
+
+      setToast({ visible: true, message: "Failed to update status. Roll back" });
+
+      setTimeout(() => {
+        setToast({ visible: false, message: "" });
+      }, 2500);
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ["applications"] });
+    }
   });
 
   const uiList = useMemo<ApplicationUI[]>(() => {
@@ -46,8 +84,6 @@ export default function ApplicationsPage() {
       notesPreview: row.notes ? row.notes.slice(0, 60) : ""
     }));
   }, [data]);
-
-  const router = useRouter();
 
   const filteredAndSorted = useMemo(() => {
     const query = searchQuery.trim().toLowerCase();
@@ -129,7 +165,19 @@ export default function ApplicationsPage() {
         onRowClick={(id) => {
           router.push(`/applications/${id}`);
         }}
+        onStatusChange={(id, status) => {
+          updateStatusMutation.mutate({ id, status });
+        }}
       />
+      {toast.visible ? (
+        <div
+          role="status"
+          aria-live="polite"
+          className="fixed bottom-6 right-6 rounded-lg border bg-background px-4 py-2 text-sm shadow-soft"
+        >
+          {toast.message}
+        </div>
+      ) : null}
     </section>
   );
 }

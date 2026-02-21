@@ -22,35 +22,43 @@ type ApplicationTableProps = {
   sortOrder: SortOrder;
   onSortChange: (key: SortKey) => void;
   onRowClick: (id: string) => void;
+  onStatusChange: (id: string, nextStatus: Application["status"]) => void;
 };
 
-const STATUS_STYLES: Record<Application["status"], string> = {
-  Draft: "bg-muted text-muted-foreground",
-  Applied: "bg-blue-50 text-blue-700",
-  Interviewing: "bg-amber-50 text-amber-700",
-  Offer: "bg-emerald-50 text-emerald-700",
-  Rejected: "bg-rose-50 text-rose-700"
-};
+const STATUS_OPTIONS: Application["status"][] = [
+  "Draft",
+  "Applied",
+  "Interviewing",
+  "Offer",
+  "Rejected"
+];
 
 export default function ApplicationTable({
   applications,
   sortKey,
   sortOrder,
   onSortChange,
-  onRowClick
+  onRowClick,
+  onStatusChange
 }: ApplicationTableProps) {
   return (
-    <div>
-      <table>
-        <thead>
+    <div className="overflow-hidden rounded-2xl border bg-card shadow-soft">
+      <table className="w-full text-left text-sm">
+        <thead className="bg-muted/50 text-xs uppercase tracking-wide text-muted-foreground">
           <tr>
-            <th className="px-4 py-3">Role</th>
-            <th className="px-4 py-3">Status</th>
             <SortableHeader
               label="Company"
               active={sortKey === "company"}
               order={sortOrder}
               onClick={() => onSortChange("company")}
+            />
+            <th className="px-4 py-3">Role</th>
+            <th className="px-4 py-3">Status</th>
+            <SortableHeader
+              label="Applied"
+              active={sortKey === "appliedAt"}
+              order={sortOrder}
+              onClick={() => onSortChange("appliedAt")}
             />
             <th className="px-4 py-3">Source</th>
             <th className="px-4 py-3">Location</th>
@@ -74,15 +82,25 @@ export default function ApplicationTable({
               >
                 <td className="px-6 py-4 font-medium">{app.company}</td>
                 <td className="px-4 py-4 text-muted-foreground">{app.roleTitle}</td>
+                {/*  Status Dropdown */}
                 <td className="px-4 py-4">
-                  <span
+                  <select
+                    onClick={(event) => event.stopPropagation()}
+                    onChange={(event) =>
+                      onStatusChange(app.id, event.target.value as Application["status"])
+                    }
+                    value={app.status}
                     className={cn(
-                      "inline-flex items-center rounded-full px-2.5 py-1 text-xs font-medium",
-                      STATUS_STYLES[app.status]
+                      "rounded-md border px-2 py-1 text-xs font-medium",
+                      "bg-background"
                     )}
                   >
-                    {app.status}
-                  </span>
+                    {STATUS_OPTIONS.map((status) => (
+                      <option key={status} value={status}>
+                        {status}
+                      </option>
+                    ))}
+                  </select>
                 </td>
                 <td className="px-4 py-4 text-muted-foreground">
                   {new Date(app.appliedAt).toLocaleDateString()}
