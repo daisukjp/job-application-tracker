@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import ApplicationForm, {
   type ApplicationFormValues
-} from "@/components/applications/ApplicationEditForm";
+} from "@/components/applications/ApplicationForm";
 import { createApplication } from "@/lib/data/applications";
 
 type ToastState = {
@@ -43,7 +43,8 @@ export default function NewApplicationPage() {
       applied_at: values.appliedAt,
       source: values.source ?? null,
       location: values.location ?? null,
-      notes: values.notes ?? null
+      notes: values.notes ?? null,
+      follow_up_date: values.followUpDate || null
     });
   };
 
@@ -66,7 +67,8 @@ export default function NewApplicationPage() {
             appliedAt: "",
             source: "",
             location: "",
-            notes: ""
+            notes: "",
+            followUpDate: ""
           }}
           onSubmit={handleSubmit}
           submitLabel="Create"

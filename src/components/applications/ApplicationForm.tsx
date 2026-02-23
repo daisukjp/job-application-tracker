@@ -3,7 +3,6 @@
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
-import type { Application } from "@/lib/store/applications";
 
 export const applicationSchema = z.object({
   company: z.string().min(1, "Company is required"),
@@ -12,7 +11,8 @@ export const applicationSchema = z.object({
   appliedAt: z.string().min(1, "Applied At is required"),
   source: z.string().optional(),
   location: z.string().optional(),
-  notes: z.string().optional()
+  notes: z.string().optional(),
+  followUpDate: z.string().optional()
 });
 
 export type ApplicationFormValues = z.infer<typeof applicationSchema>;
@@ -94,6 +94,18 @@ export default function ApplicationForm({
           className="w-full rounded-lg border bg-background px-3 py-2 text-sm"
         />
         {errors.appliedAt && <p className="text-xs text-red-600">{errors.appliedAt.message}</p>}
+      </div>
+
+      {/* Follow Up Date */}
+      <div className="space-y-1">
+        <label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+          Follow Up Date
+        </label>
+        <input
+          type="date"
+          {...register("followUpDate")}
+          className="h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+        />
       </div>
 
       {/* Source */}

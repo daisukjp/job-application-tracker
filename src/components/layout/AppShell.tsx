@@ -6,7 +6,8 @@ const navItems = [
   { label: "Dashboard", href: "/" },
   { label: "Applications", href: "/applications" },
   { label: "New Application", href: "/applications/new" },
-  { label: "Settings", href: "/settings" }
+  { label: "Settings", href: "/settings" },
+  { label: "Follow-ups", href: "/follow-ups" }
 ];
 
 export default function AppShell({ children }: { children: ReactNode }) {

@@ -11,6 +11,7 @@ export type ApplicationRow = {
   source: string | null;
   location: string | null;
   notes: string | null;
+  follow_up_date: string | null;
   created_at: string;
 };
 

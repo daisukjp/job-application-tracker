@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import ApplicationForm, {
   type ApplicationFormValues
-} from "@/components/applications/ApplicationEditForm";
+} from "@/components/applications/ApplicationForm";
 import Skeleton from "@/components/ui/Skeleton";
 import { getApplication, updateApplication } from "@/lib/data/applications";
 
@@ -41,7 +41,8 @@ export default function ApplicationDetailPage({ params }: ApplicationDetailPageP
         applied_at: values.appliedAt,
         source: values.source ?? null,
         location: values.location ?? null,
-        notes: values.notes ?? null
+        notes: values.notes ?? null,
+        follow_up_date: values.followUpDate ?? null
       }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["applications"] });
@@ -55,6 +56,10 @@ export default function ApplicationDetailPage({ params }: ApplicationDetailPageP
       }, 2500);
     }
   });
+
+  const followUpLabel = data?.follow_up_date
+    ? new Date(data?.follow_up_date).toLocaleDateString()
+    : "-";
 
   if (isLoading) {
     return (
@@ -142,6 +147,12 @@ export default function ApplicationDetailPage({ params }: ApplicationDetailPageP
             </div>
             <div>
               <dt className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                Follow Up Date
+              </dt>
+              <dd className="text-sm">{followUpLabel}</dd>
+            </div>
+            <div>
+              <dt className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                 Source
               </dt>
               <dd className="text-sm">{data.source || "—"}</dd>
@@ -171,7 +182,8 @@ export default function ApplicationDetailPage({ params }: ApplicationDetailPageP
               appliedAt: data.applied_at,
               source: data.source ?? "",
               location: data.location ?? "",
-              notes: data.notes ?? ""
+              notes: data.notes ?? "",
+              followUpDate: data.follow_up_date ?? ""
             }}
             onSubmit={(values) => updateMutation.mutate(values)}
             onCancel={() => setIsEditing(false)}
