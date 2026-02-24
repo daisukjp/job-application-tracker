@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import FiltersBar from "../../components/applications/FiltersBar";
@@ -14,6 +14,7 @@ import {
   updateApplication,
   type ApplicationRow
 } from "../../lib/data/applications";
+import { buildMockApplications } from "@/lib/mockApplications";
 
 type ApplicationUI = {
   id: string;
@@ -21,6 +22,7 @@ type ApplicationUI = {
   roleTitle: string;
   status: "Draft" | "Applied" | "Interviewing" | "Offer" | "Rejected";
   appliedAt: string;
+  followUpDate: string | null;
   source: string | null;
   location: string | null;
   notesPreview: string | null;
@@ -32,17 +34,24 @@ export default function ApplicationsPage() {
   const router = useRouter();
   const queryClient = useQueryClient();
 
+  const useMocks =
+    process.env.NODE_ENV === "development" && process.env.NEXT_PUBLIC_USE_MOCKS === "true";
+
+  const mockRows = useMemo(() => (useMocks ? buildMockApplications(1000) : undefined), [useMocks]);
+
+  const { data, isLoading, isError, error, refetch } = useQuery({
+    queryKey: ["applications"],
+    queryFn: listApplications,
+    enabled: !useMocks,
+    initialData: mockRows
+  });
+
   const [toast, setToast] = useState<ToastState>({ visible: false, message: "" });
 
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("All");
   const [sortKey, setSortKey] = useState<SortKey>("appliedAt");
   const [sortOrder, setSortOrder] = useState<SortOrder>("desc");
-
-  const { data, isLoading, isError, error, refetch } = useQuery({
-    queryKey: ["applications"],
-    queryFn: listApplications
-  });
 
   const updateStatusMutation = useMutation({
     mutationFn: ({ id, status }: { id: string; status: ApplicationUI["status"] }) =>
@@ -79,6 +88,7 @@ export default function ApplicationsPage() {
       roleTitle: row.role_title,
       status: row.status as ApplicationUI["status"],
       appliedAt: row.applied_at,
+      followUpDate: row.follow_up_date ?? null,
       source: row.source ?? "",
       location: row.location ?? "",
       notesPreview: row.notes ? row.notes.slice(0, 60) : ""
@@ -109,6 +119,20 @@ export default function ApplicationsPage() {
 
     return sorted;
   }, [uiList, searchQuery, statusFilter, sortKey, sortOrder]);
+
+  const handleClick = useCallback(
+    (id: string) => {
+      router.push(`/applications/${id}`);
+    },
+    [router]
+  );
+
+  const handleStatusChange = useCallback(
+    (id: string, status: ApplicationUI["status"]) => {
+      updateStatusMutation.mutate({ id, status });
+    },
+    [updateStatusMutation]
+  );
 
   if (isLoading) {
     return (

@@ -1,5 +1,7 @@
 "use client";
 
+import { memo } from "react";
+import { TableVirtuoso } from "react-virtuoso";
 import { cn } from "@/lib/utils";
 
 export type Application = {
@@ -8,6 +10,7 @@ export type Application = {
   roleTitle: string;
   status: "Draft" | "Applied" | "Interviewing" | "Offer" | "Rejected";
   appliedAt: string;
+  followUpDate: string | null;
   source: string | null;
   location: string | null;
   notesPreview: string | null;
@@ -33,6 +36,58 @@ const STATUS_OPTIONS: Application["status"][] = [
   "Rejected"
 ];
 
+const ROW_HEIGHT = 52;
+const TABLE_HEIGHT = 520;
+
+const RowCells = memo(function RowCells({
+  app,
+  onRowClick,
+  onStatusChange
+}: {
+  app: Application;
+  onRowClick: (id: string) => void;
+  onStatusChange: (id: string, nextStatus: Application["status"]) => void;
+}) {
+  const handleRowClick = () => onRowClick(app.id);
+
+  return (
+    <>
+      <td className="px-6 py-4 font-medium" onClick={handleRowClick}>
+        {app.company}
+      </td>
+      <td className="px-4 py-4 text-muted-foreground" onClick={handleRowClick}>
+        {app.roleTitle}
+      </td>
+      <td className="px-4 py-4">
+        <select
+          onClick={(event) => event.stopPropagation()}
+          onChange={(event) => onStatusChange(app.id, event.target.value as Application["status"])}
+          value={app.status}
+          className={cn("rounded-md border px-2 py-1 text-xs font-medium", "bg-background")}
+        >
+          {STATUS_OPTIONS.map((status) => (
+            <option key={status} value={status}>
+              {status}
+            </option>
+          ))}
+        </select>
+      </td>
+      <td className="px-4 py-4 text-muted-foreground" onClick={handleRowClick}>
+        {new Date(app.appliedAt).toLocaleDateString()}
+      </td>
+      <td className="px-4 py-4 text-muted-foreground" onClick={handleRowClick}>
+        {app.source ?? "—"}
+      </td>
+      <td className="px-4 py-4 text-muted-foreground" onClick={handleRowClick}>
+        {app.location ?? "—"}
+      </td>
+      <td className="px-4 py-4 pr-6 text-muted-foreground" onClick={handleRowClick}>
+        {app.notesPreview ?? "—"}
+      </td>
+    </>
+  );
+});
+
 export default function ApplicationTable({
   applications,
   sortKey,
@@ -43,14 +98,17 @@ export default function ApplicationTable({
 }: ApplicationTableProps) {
   return (
     <div className="overflow-hidden rounded-2xl border bg-card shadow-soft">
-      <table className="w-full text-left text-sm">
-        <thead className="bg-muted/50 text-xs uppercase tracking-wide text-muted-foreground">
-          <tr>
+      <TableVirtuoso
+        data={applications}
+        style={{ height: TABLE_HEIGHT }}
+        fixedHeaderContent={() => (
+          <tr className="bg-muted/80 backdrop-blur border-b">
             <SortableHeader
               label="Company"
               active={sortKey === "company"}
               order={sortOrder}
               onClick={() => onSortChange("company")}
+              className="pl-6"
             />
             <th className="px-4 py-3">Role</th>
             <th className="px-4 py-3">Status</th>
@@ -64,55 +122,15 @@ export default function ApplicationTable({
             <th className="px-4 py-3">Location</th>
             <th className="px-4 py-3 pr-6">Notes</th>
           </tr>
-        </thead>
-
-        <tbody>
-          {applications.length === 0 ? (
-            <tr>
-              <td colSpan={7} className="px-6 py-10 text-center text-muted-foreground">
-                No application found.
-              </td>
-            </tr>
-          ) : (
-            applications.map((app) => (
-              <tr
-                key={app.id}
-                className="cursor-pointer border-t transition hover:bg-accent/40"
-                onClick={() => onRowClick(app.id)}
-              >
-                <td className="px-6 py-4 font-medium">{app.company}</td>
-                <td className="px-4 py-4 text-muted-foreground">{app.roleTitle}</td>
-                {/*  Status Dropdown */}
-                <td className="px-4 py-4">
-                  <select
-                    onClick={(event) => event.stopPropagation()}
-                    onChange={(event) =>
-                      onStatusChange(app.id, event.target.value as Application["status"])
-                    }
-                    value={app.status}
-                    className={cn(
-                      "rounded-md border px-2 py-1 text-xs font-medium",
-                      "bg-background"
-                    )}
-                  >
-                    {STATUS_OPTIONS.map((status) => (
-                      <option key={status} value={status}>
-                        {status}
-                      </option>
-                    ))}
-                  </select>
-                </td>
-                <td className="px-4 py-4 text-muted-foreground">
-                  {new Date(app.appliedAt).toLocaleDateString()}
-                </td>
-                <td className="px-4 py-4 text-muted-foreground">{app.source}</td>
-                <td className="px-4 py-4 text-muted-foreground">{app.location}</td>
-                <td className="px-4 py-4 pr-6 text-muted-foreground">{app.notesPreview}</td>
-              </tr>
-            ))
-          )}
-        </tbody>
-      </table>
+        )}
+        itemContent={(_index, app) => (
+          <RowCells app={app} onRowClick={onRowClick} onStatusChange={onStatusChange} />
+        )}
+        components={{
+          Table: (props) => <table {...props} className="w-full text-left text-sm" />,
+          TableRow: (props) => <tr {...props} className="border-t" />
+        }}
+      />
     </div>
   );
 }
