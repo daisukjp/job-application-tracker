@@ -1,6 +1,7 @@
 "use client";
 
 import { supabase } from "../supabaseClient";
+import { logError } from "../logging";
 
 export type ApplicationRow = {
   id: string;
@@ -23,6 +24,7 @@ export async function listApplications(): Promise<ApplicationRow[]> {
     .order("applied_at", { ascending: false });
 
   if (error) {
+    logError(error, { area: "listApplications" });
     throw new Error(error.message);
   }
   return data ?? [];
